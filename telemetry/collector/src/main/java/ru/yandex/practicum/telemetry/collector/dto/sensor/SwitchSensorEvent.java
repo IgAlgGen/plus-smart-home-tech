@@ -1,7 +1,11 @@
 package ru.yandex.practicum.telemetry.collector.dto.sensor;
 
 import jakarta.validation.constraints.NotNull;
+import lombok.Getter;
+import lombok.Setter;
 
+@Getter
+@Setter
 public class SwitchSensorEvent extends SensorEvent {
 
     @NotNull
@@ -10,13 +14,5 @@ public class SwitchSensorEvent extends SensorEvent {
     @Override
     public SensorEventType getType() {
         return SensorEventType.SWITCH_SENSOR_EVENT;
-    }
-
-    public Boolean getState() {
-        return state;
-    }
-
-    public void setState(Boolean state) {
-        this.state = state;
     }
 }

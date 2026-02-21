@@ -1,7 +1,11 @@
 package ru.yandex.practicum.telemetry.collector.dto.hub;
 
 import jakarta.validation.constraints.NotBlank;
+import lombok.Getter;
+import lombok.Setter;
 
+@Getter
+@Setter
 public class DeviceRemovedEvent extends HubEvent {
 
     @NotBlank
@@ -10,13 +14,5 @@ public class DeviceRemovedEvent extends HubEvent {
     @Override
     public HubEventType getType() {
         return HubEventType.DEVICE_REMOVED;
-    }
-
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
     }
 }
