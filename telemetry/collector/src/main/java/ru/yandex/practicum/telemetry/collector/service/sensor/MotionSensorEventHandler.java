@@ -1,23 +1,29 @@
 package ru.yandex.practicum.telemetry.collector.service.sensor;
 
-import org.apache.kafka.clients.producer.Producer;
-import org.springframework.stereotype.Service;
-import ru.yandex.practicum.telemetry.collector.config.KafkaProperties;
-import ru.yandex.practicum.telemetry.collector.dto.sensor.SensorEventType;
-import ru.yandex.practicum.telemetry.collector.mapper.EventAvroMapper;
-import ru.yandex.practicum.telemetry.collector.service.AvroBinarySerializer;
+import org.springframework.stereotype.Component;
+import ru.yandex.practicum.grpc.telemetry.event.MotionSensorProto;
+import ru.yandex.practicum.grpc.telemetry.event.SensorEventProto;
+import ru.yandex.practicum.kafka.telemetry.event.MotionSensorAvro;
+import ru.yandex.practicum.telemetry.collector.kafka.KafkaClientProducer;
 
-@Service
-public class MotionSensorEventHandler extends BaseSensorEventHandler {
-    public MotionSensorEventHandler(Producer<String, byte[]> producer,
-                                    KafkaProperties kafkaProperties,
-                                    EventAvroMapper eventAvroMapper,
-                                    AvroBinarySerializer avroBinarySerializer) {
-        super(producer, kafkaProperties, eventAvroMapper, avroBinarySerializer);
+@Component
+public class MotionSensorEventHandler extends BaseSensorEventHandler<MotionSensorAvro> {
+    public MotionSensorEventHandler(KafkaClientProducer producer) {
+        super(producer);
     }
 
     @Override
-    public SensorEventType getMessageType() {
-        return SensorEventType.MOTION_SENSOR_EVENT;
+    protected MotionSensorAvro mapToAvro(SensorEventProto event) {
+        MotionSensorProto motionSensorEvent = event.getMotionSensorEvent();
+        return MotionSensorAvro.newBuilder()
+                .setLinkQuality(motionSensorEvent.getLinkQuality())
+                .setVoltage(motionSensorEvent.getVoltage())
+                .setMotion(motionSensorEvent.getMotion())
+                .build();
+    }
+
+    @Override
+    public SensorEventProto.PayloadCase getMessageType() {
+        return SensorEventProto.PayloadCase.MOTION_SENSOR_EVENT;
     }
 }
