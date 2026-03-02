@@ -1,41 +1,52 @@
 package ru.yandex.practicum.telemetry.collector.service.hub;
 
-import org.apache.kafka.clients.producer.Producer;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.avro.specific.SpecificRecordBase;
 import org.apache.kafka.clients.producer.ProducerRecord;
-import ru.yandex.practicum.telemetry.collector.config.KafkaProperties;
-import ru.yandex.practicum.telemetry.collector.dto.hub.HubEvent;
-import ru.yandex.practicum.telemetry.collector.mapper.EventAvroMapper;
-import ru.yandex.practicum.telemetry.collector.service.AvroBinarySerializer;
+import org.springframework.beans.factory.annotation.Value;
+import ru.yandex.practicum.grpc.telemetry.event.HubEventProto;
+import ru.yandex.practicum.kafka.telemetry.event.HubEventAvro;
+import ru.yandex.practicum.telemetry.collector.kafka.KafkaClientProducer;
 
-public abstract class BaseHubEventHandler implements HubEventHandler {
+import java.time.Instant;
 
-    private final Producer<String, byte[]> producer;
-    private final KafkaProperties kafkaProperties;
-    private final EventAvroMapper eventAvroMapper;
-    private final AvroBinarySerializer avroBinarySerializer;
+@Slf4j
+@RequiredArgsConstructor
+public abstract class BaseHubEventHandler<T extends SpecificRecordBase> implements HubEventHandler {
+    protected final KafkaClientProducer producer;
 
-    protected BaseHubEventHandler(Producer<String, byte[]> producer,
-                                  KafkaProperties kafkaProperties,
-                                  EventAvroMapper eventAvroMapper,
-                                  AvroBinarySerializer avroBinarySerializer) {
-        this.producer = producer;
-        this.kafkaProperties = kafkaProperties;
-        this.eventAvroMapper = eventAvroMapper;
-        this.avroBinarySerializer = avroBinarySerializer;
-    }
+    @Value("${kafka.topic.hub}")
+    protected String topic;
+
+    protected abstract T mapToAvro(HubEventProto event);
 
     @Override
-    public void handle(HubEvent event) {
-        if (!event.getType().equals(getMessageType())) {
-            throw new IllegalArgumentException("Unsupported hub event type: " + event.getType());
+    public void handle(HubEventProto event) {
+        if (!event.getPayloadCase().equals(getMessageType())) {
+            throw new IllegalArgumentException("Неизвестный тип события: " + event.getPayloadCase());
         }
 
-        byte[] payload = avroBinarySerializer.serialize(eventAvroMapper.toAvro(event));
-        ProducerRecord<String, byte[]> record = new ProducerRecord<>(
-                kafkaProperties.getHubTopic(),
-                event.getHubId(),
-                payload
-        );
-        producer.send(record);
+        //преобразование события в Avro запись
+        T payload = mapToAvro(event);
+
+        HubEventAvro eventAvro = HubEventAvro.newBuilder()
+                .setHubId(event.getHubId())
+                .setTimestamp(Instant.ofEpochSecond(
+                        event.getTimestamp().getSeconds(),
+                        event.getTimestamp().getNanos()))
+                .setPayload(payload)
+                .build();
+
+        ProducerRecord<String, SpecificRecordBase> record = new ProducerRecord<>(
+                topic,
+                null,
+                eventAvro.getTimestamp().toEpochMilli(),
+                eventAvro.getHubId(),
+                eventAvro);
+
+        producer.getProducer().send(record);
+
+        log.info("Отправили в Kafka: {}", record);
     }
 }

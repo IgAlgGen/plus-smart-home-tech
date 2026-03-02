@@ -1,23 +1,29 @@
 package ru.yandex.practicum.telemetry.collector.service.sensor;
 
-import org.apache.kafka.clients.producer.Producer;
-import org.springframework.stereotype.Service;
-import ru.yandex.practicum.telemetry.collector.config.KafkaProperties;
-import ru.yandex.practicum.telemetry.collector.dto.sensor.SensorEventType;
-import ru.yandex.practicum.telemetry.collector.mapper.EventAvroMapper;
-import ru.yandex.practicum.telemetry.collector.service.AvroBinarySerializer;
+import org.springframework.stereotype.Component;
+import ru.yandex.practicum.grpc.telemetry.event.SensorEventProto;
+import ru.yandex.practicum.grpc.telemetry.event.TemperatureSensorProto;
+import ru.yandex.practicum.kafka.telemetry.event.TemperatureSensorAvro;
+import ru.yandex.practicum.telemetry.collector.kafka.KafkaClientProducer;
 
-@Service
-public class TemperatureSensorEventHandler extends BaseSensorEventHandler {
-    public TemperatureSensorEventHandler(Producer<String, byte[]> producer,
-                                         KafkaProperties kafkaProperties,
-                                         EventAvroMapper eventAvroMapper,
-                                         AvroBinarySerializer avroBinarySerializer) {
-        super(producer, kafkaProperties, eventAvroMapper, avroBinarySerializer);
+
+@Component
+public class TemperatureSensorEventHandler extends BaseSensorEventHandler<TemperatureSensorAvro> {
+    public TemperatureSensorEventHandler(KafkaClientProducer producer) {
+        super(producer);
     }
 
     @Override
-    public SensorEventType getMessageType() {
-        return SensorEventType.TEMPERATURE_SENSOR_EVENT;
+    protected TemperatureSensorAvro mapToAvro(SensorEventProto event) {
+        TemperatureSensorProto temperatureSensorEvent = event.getTemperatureSensorEvent();
+        return TemperatureSensorAvro.newBuilder()
+                .setTemperatureC(temperatureSensorEvent.getTemperatureC())
+                .setTemperatureF(temperatureSensorEvent.getTemperatureF())
+                .build();
+    }
+
+    @Override
+    public SensorEventProto.PayloadCase getMessageType() {
+        return SensorEventProto.PayloadCase.TEMPERATURE_SENSOR_EVENT;
     }
 }
