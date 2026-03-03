@@ -22,26 +22,15 @@ protocol SensorEventProtocol {
         boolean state;
     }
 
-    record TemperatureSensorAvro {
-        string id;
-        string hubId;
-        @logicalType("timestamp-millis")
-        long timestamp;
-        int temperature_c;
-        int temperature_f;
-    }
+	record TemperatureSensorAvro {
+		int temperature_c;
+		int temperature_f;
+	}
 
-    record SensorEventAvro {
-        string id;
-        string hubId;
-        @logicalType("timestamp-millis")
-        long timestamp;
-        union {
-            ClimateSensorAvro,
-            LightSensorAvro,
-            MotionSensorAvro,
-            SwitchSensorAvro,
-            TemperatureSensorAvro
-        } payload;
-    }
+	record SensorEventAvro {
+		string id;
+		string hubId;
+		timestamp_ms timestamp;
+		union { ClimateSensorAvro, LightSensorAvro, MotionSensorAvro, SwitchSensorAvro, TemperatureSensorAvro } payload;
+	}
 }
