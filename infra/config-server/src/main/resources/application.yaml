@@ -9,3 +9,5 @@ spring:
         native:
           searchLocations:
             - classpath:config/telemetry/{application}
+server:
+  port: 8888
