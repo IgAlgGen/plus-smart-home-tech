@@ -38,3 +38,14 @@ spring:
   sql:
     init:
       mode: always
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:8761/eureka/
+  instance:
+    preferIpAddress: false
+    hostname: external.host
+    metadataMap:
+      customParam: customValue
+      anotherParam: anotherValue

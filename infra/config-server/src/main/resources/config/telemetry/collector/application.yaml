@@ -1,9 +1,16 @@
-aggregator:
-  kafka:
-    bootstrap-servers: localhost:9092
-    input-topic: telemetry.sensors.v1
-    output-topic: telemetry.snapshots.v1
-    group-id: telemetry.aggregator
+kafka:
+  topic:
+    hub: telemetry.hubs.v1
+    sensor: telemetry.sensors.v1
+  bootstrap:
+    server: localhost:9092
+
+server:
+  port: 8081
+
+grpc:
+  server:
+    port: 59091
 
 eureka:
   client:
