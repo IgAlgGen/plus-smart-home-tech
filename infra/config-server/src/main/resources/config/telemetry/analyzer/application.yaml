@@ -1,0 +1,40 @@
+kafka:
+  topics:
+    snapshots: "telemetry.snapshots.v1"
+    hubs: "telemetry.hubs.v1"
+  key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+  hub-consumer-properties:
+    group-id: analyzer-hub-group
+    value-deserializer: deserializer.HubEventDeserializer
+  snapshot-consumer-properties:
+    group-id: analyzer-snapshot-group
+    value-deserializer: deserializer.SensorsSnapshotDeserializer
+  bootstrap-servers: localhost:9092
+
+grpc:
+  client:
+    hub-router:
+      address: "static://localhost:59090"
+      enableKeepAlive: true
+      keepAliveWithoutCalls: true
+      negotiationType: plaintext
+
+spring:
+  datasource:
+    driverClassName: "org.postgresql.Driver"
+    url: "jdbc:postgresql://${ANALYZER_DB_HOST:localhost}:${ANALYZER_DB_PORT:5433}/${ANALYZER_DB_NAME:analyzer}"
+    username: "${ANALYZER_DB_USER:postgres}"
+    password: "${ANALYZER_DB_PASSWORD:12345}"
+  jpa:
+    hibernate:
+      ddl-auto: none
+    properties:
+      hibernate:
+        format_sql: true
+        show_sql: true
+        jdbc:
+          lob:
+            non_contextual_creation: true
+  sql:
+    init:
+      mode: always
