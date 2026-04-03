@@ -1,16 +1,16 @@
 services:
-  analyzer-db:
+  smarthome-db:
     image: postgres:16-alpine
-    container_name: analyzer-db
+    container_name: smarthome-db
     restart: unless-stopped
     environment:
-      POSTGRES_DB: analyzer
+      POSTGRES_DB: smarthome
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: 12345
     ports:
       - "5433:5432"
     volumes:
-      - analyzer-pgdata:/var/lib/postgresql/data
+      - smarthome-pgdata:/var/lib/postgresql/data
 
   kafka:
     image: confluentinc/confluent-local:7.4.3
@@ -48,4 +48,4 @@ services:
     init: true
 
 volumes:
-  analyzer-pgdata:
+  smarthome-pgdata:
