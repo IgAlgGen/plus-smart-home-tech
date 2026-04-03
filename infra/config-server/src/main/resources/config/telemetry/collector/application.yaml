@@ -1,0 +1,16 @@
+application:
+  name: controller
+
+kafka:
+  topic:
+    hub: telemetry.hubs.v1
+    sensor: telemetry.sensors.v1
+  bootstrap:
+    server: localhost:9092
+
+server:
+  port: 8081
+
+grpc:
+  server:
+    port: 59091
