@@ -13,4 +13,10 @@ server:
 
 grpc:
   server:
-    port: 9091
+    port: 59091
+  client:
+    hub-router:
+      address: "static://localhost:59090"
+      enableKeepAlive: true
+      keepAliveWithoutCalls: true
+      negotiationType: plaintext
