@@ -53,38 +53,67 @@ public class WarehouseServiceImpl implements WarehouseService {
     public BookedProductsDto checkProductQuantityEnoughForShoppingCart(ShoppingCartDto cartDto) {
         log.info("Запрашиваем товары из корзины {}", cartDto);
         Map<UUID, Integer> products = cartDto.getProducts();
-        if (products == null || products.isEmpty()) {
-            throw new ProductInShoppingCartLowQuantityInWarehouse("Корзина не содержит товаров для бронирования");
-        }
+        validateCartProducts(products);
         log.info("Запрашиваем количество доступных товаров на складе {}", products.keySet());
-        List<WarehouseProduct> availableProductsList = warehouseRepository.findAllById(products.keySet());
-        Map<UUID, WarehouseProduct> availableProductsMap = availableProductsList.stream()
-                .collect(Collectors.toMap(WarehouseProduct::getProductId, Function.identity()));
+        Map<UUID, WarehouseProduct> availableProductsMap = getAvailableProductsMap(products.keySet());
         BookedProductsDto bookedProductsDto = new BookedProductsDto();
         for (Map.Entry<UUID, Integer> product : products.entrySet()) {
-            UUID id = product.getKey();
-            WarehouseProduct availableProduct = availableProductsMap.get(id);
-            if (availableProduct == null) {
-                throw new NoSpecifiedProductInWarehouseException("Такого товара нет в перечне товаров на складе:" + product.getKey().toString());
-            }
-            if (product.getValue() == null || product.getValue() <= 0) {
-                throw new ProductInShoppingCartLowQuantityInWarehouse("Количество товара должно быть больше 0");
-            }
-            if (availableProduct.getQuantity() >= product.getValue()) {
-                Double volume = bookedProductsDto.getDeliveryVolume() + (availableProduct.getWidth() * availableProduct.getHeight() * availableProduct.getDepth()) * product.getValue();
-                bookedProductsDto.setDeliveryVolume(volume);
-                Double weight = bookedProductsDto.getDeliveryWeight() + (availableProduct.getWeight()) * product.getValue();
-                bookedProductsDto.setDeliveryWeight(weight);
-                if (availableProduct.getFragile()) {
-                    bookedProductsDto.setFragile(true);
-                }
-            } else {String message = "Количества продукта " + availableProduct.getProductId() + " недостаточно на складе. Уменьшите количество продукта до " + availableProduct.getQuantity();
-                log.info(message);
-                throw new ProductInShoppingCartLowQuantityInWarehouse(message);
-            }
+            WarehouseProduct availableProduct = getAvailableProductOrThrow(availableProductsMap, product.getKey());
+            Integer requestedQuantity = getRequestedQuantityOrThrow(product.getValue());
+            validateProductQuantityInWarehouse(availableProduct, requestedQuantity);
+            accumulateBookedProductInfo(bookedProductsDto, availableProduct, requestedQuantity);
         }
         log.info("Параметры заказа: {}", bookedProductsDto);
         return bookedProductsDto;
+    }
+
+    private void validateCartProducts(Map<UUID, Integer> products) {
+        if (products == null || products.isEmpty()) {
+            throw new ProductInShoppingCartLowQuantityInWarehouse("Корзина не содержит товаров для бронирования");
+        }
+    }
+
+    private Map<UUID, WarehouseProduct> getAvailableProductsMap(Iterable<UUID> productIds) {
+        List<WarehouseProduct> availableProductsList = warehouseRepository.findAllById(productIds);
+        return availableProductsList.stream()
+                .collect(Collectors.toMap(WarehouseProduct::getProductId, Function.identity()));
+    }
+
+    private WarehouseProduct getAvailableProductOrThrow(Map<UUID, WarehouseProduct> availableProductsMap, UUID productId) {
+        WarehouseProduct availableProduct = availableProductsMap.get(productId);
+        if (availableProduct == null) {
+            throw new NoSpecifiedProductInWarehouseException("Такого товара нет в перечне товаров на складе:" + productId);
+        }
+        return availableProduct;
+    }
+
+    private Integer getRequestedQuantityOrThrow(Integer requestedQuantity) {
+        if (requestedQuantity == null || requestedQuantity <= 0) {
+            throw new ProductInShoppingCartLowQuantityInWarehouse("Количество товара должно быть больше 0");
+        }
+        return requestedQuantity;
+    }
+
+    private void validateProductQuantityInWarehouse(WarehouseProduct availableProduct, Integer requestedQuantity) {
+        if (availableProduct.getQuantity() < requestedQuantity) {
+            String message = "Количества продукта " + availableProduct.getProductId()
+                    + " недостаточно на складе. Уменьшите количество продукта до " + availableProduct.getQuantity();
+            log.info(message);
+            throw new ProductInShoppingCartLowQuantityInWarehouse(message);
+        }
+    }
+
+    private void accumulateBookedProductInfo(BookedProductsDto bookedProductsDto,
+                                             WarehouseProduct availableProduct,
+                                             Integer requestedQuantity) {
+        Double volume = bookedProductsDto.getDeliveryVolume()
+                + (availableProduct.getWidth() * availableProduct.getHeight() * availableProduct.getDepth()) * requestedQuantity;
+        bookedProductsDto.setDeliveryVolume(volume);
+        Double weight = bookedProductsDto.getDeliveryWeight() + availableProduct.getWeight() * requestedQuantity;
+        bookedProductsDto.setDeliveryWeight(weight);
+        if (availableProduct.getFragile()) {
+            bookedProductsDto.setFragile(true);
+        }
     }
 
     @Transactional
