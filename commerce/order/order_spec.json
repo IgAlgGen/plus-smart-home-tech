@@ -6,65 +6,72 @@
   },
   "servers": [
     {
-      "url": "http://localhost:38081",
+      "url": "http://localhost:41723",
       "description": "Generated server url"
     }
   ],
   "tags": [
     {
-      "name": "Склад магазина",
-      "description": "API для обеспечения работы склада онлайн магазина"
+      "name": "Обработка заказов",
+      "description": "API для работы с заказами"
     }
   ],
   "paths": {
-    "/api/v1/warehouse": {
+    "/api/v1/order": {
+      "get": {
+        "tags": [
+          "Обработка заказов"
+        ],
+        "description": "Получить заказы пользователя.",
+        "operationId": "getClientOrders",
+        "parameters": [
+          {
+            "name": "username",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Имя пользователя не должно быть пустым",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotAuthorizedUserException"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Список всех заказов пользователя (Точка улучшения и развития - пагинированный вывод)",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/OrderDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
       "put": {
         "tags": [
-          "Склад магазина"
+          "Обработка заказов"
         ],
-        "description": "Добавить новый товар на склад.",
-        "operationId": "newProductInWarehouse",
+        "description": "Создать новый заказ в системе.",
+        "operationId": "createNewOrder",
         "requestBody": {
-          "description": "Описание нового товара для обработки складом.",
+          "description": "Запрос на создание заказа.",
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/NewProductInWarehouseRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "OK"
-          },
-          "400": {
-            "description": "Ошибка, товар с таким описанием уже зарегистрирован на складе",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/SpecifiedProductAlreadyInWarehouseException"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/warehouse/check": {
-      "post": {
-        "tags": [
-          "Склад магазина"
-        ],
-        "description": "Предварительно проверить что количество товаров на складе достаточно для данной корзиный продуктов.",
-        "operationId": "checkProductQuantityEnoughForShoppingCart",
-        "requestBody": {
-          "description": "Корзина товаров.",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ShoppingCartDto"
+                "$ref": "#/components/schemas/CreateNewOrderRequest"
               }
             }
           },
@@ -72,49 +79,7 @@
         },
         "responses": {
           "400": {
-            "description": "Ошибка, товар из корзины не находится в требуемом количестве на складе",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProductInShoppingCartLowQuantityInWarehouse"
-                }
-              }
-            }
-          },
-          "200": {
-            "description": "Общие сведения по бронированию",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/BookedProductsDto"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/warehouse/add": {
-      "post": {
-        "tags": [
-          "Склад магазина"
-        ],
-        "description": "Принять товар на склад.",
-        "operationId": "addProductToWarehouse",
-        "requestBody": {
-          "description": "Запрос на добавление определенного количества определенного товара.",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AddProductToWarehouseRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "400": {
-            "description": "Нет информации о товаре на складе",
+            "description": "Нет заказываемого товара на складе",
             "content": {
               "*/*": {
                 "schema": {
@@ -122,24 +87,451 @@
                 }
               }
             }
+          },
+          "200": {
+            "description": "Оформленный заказ пользователя",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderDto"
+                }
+              }
+            }
           }
         }
       }
     },
-    "/api/v1/warehouse/address": {
-      "get": {
+    "/api/v1/order/return": {
+      "post": {
         "tags": [
-          "Склад магазина"
+          "Обработка заказов"
         ],
-        "description": "Предоставить адрес склада для расчёта доставки.",
-        "operationId": "getWarehouseAddress",
+        "description": "Возврат заказа.",
+        "operationId": "productReturn",
+        "parameters": [
+          {
+            "name": "productReturnRequest",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/ProductReturnRequest"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Запрос на возврат заказа.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProductReturnRequest"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
-            "description": "Актуальный адрес склада",
+            "description": "Заказ пользователя после сборки",
             "content": {
               "*/*": {
                 "schema": {
-                  "$ref": "#/components/schemas/AddressDto"
+                  "$ref": "#/components/schemas/OrderDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Не найден заказ",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/NoOrderFoundException"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/order/payment": {
+      "post": {
+        "tags": [
+          "Обработка заказов"
+        ],
+        "description": "Оплата заказа.",
+        "operationId": "payment",
+        "requestBody": {
+          "description": "Идентификатор заказа.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "400": {
+            "description": "Не найден заказ",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/NoOrderFoundException"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Заказ пользователя после оплаты",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/order/payment/failed": {
+      "post": {
+        "tags": [
+          "Обработка заказов"
+        ],
+        "description": "Оплата заказа произошла с ошибкой.",
+        "operationId": "paymentFailed",
+        "requestBody": {
+          "description": "Идентификатор заказа.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Заказ пользователя после ошибки оплаты",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Не найден заказ",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/NoOrderFoundException"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/order/delivery": {
+      "post": {
+        "tags": [
+          "Обработка заказов"
+        ],
+        "description": "Доставка заказа.",
+        "operationId": "delivery",
+        "requestBody": {
+          "description": "Идентификатор заказа.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Заказ пользователя после доставки",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Не найден заказ",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/NoOrderFoundException"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/order/delivery/failed": {
+      "post": {
+        "tags": [
+          "Обработка заказов"
+        ],
+        "description": "Доставка заказа произошла с ошибкой.",
+        "operationId": "deliveryFailed",
+        "requestBody": {
+          "description": "Идентификатор заказа.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Заказ пользователя после ошибки доставки",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Не найден заказ",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/NoOrderFoundException"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/order/completed": {
+      "post": {
+        "tags": [
+          "Обработка заказов"
+        ],
+        "description": "Завершение заказа.",
+        "operationId": "complete",
+        "requestBody": {
+          "description": "Идентификатор заказа.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Заказ пользователя после всех стадий и завершенный",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Не найден заказ",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/NoOrderFoundException"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/order/calculate/total": {
+      "post": {
+        "tags": [
+          "Обработка заказов"
+        ],
+        "description": "Расчёт стоимости заказа.",
+        "operationId": "calculateTotalCost",
+        "requestBody": {
+          "description": "Идентификатор заказа.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "400": {
+            "description": "Не найден заказ",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/NoOrderFoundException"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Заказ пользователя с расчётом общей стоимости",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/order/calculate/delivery": {
+      "post": {
+        "tags": [
+          "Обработка заказов"
+        ],
+        "description": "Расчёт стоимости доставки заказа.",
+        "operationId": "calculateDeliveryCost",
+        "requestBody": {
+          "description": "Идентификатор заказа.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Заказ пользователя с расчётом доставки",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Не найден заказ",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/NoOrderFoundException"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/order/assembly": {
+      "post": {
+        "tags": [
+          "Обработка заказов"
+        ],
+        "description": "Сборка заказа.",
+        "operationId": "assembly",
+        "requestBody": {
+          "description": "Идентификатор заказа.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Заказ пользователя после сборки",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Не найден заказ",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/NoOrderFoundException"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/order/assembly/failed": {
+      "post": {
+        "tags": [
+          "Обработка заказов"
+        ],
+        "description": "Сборка заказа произошла с ошибкой.",
+        "operationId": "assemblyFailed",
+        "requestBody": {
+          "description": "Идентификатор заказа.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Заказ пользователя после ошибки сборки",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Не найден заказ",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/NoOrderFoundException"
                 }
               }
             }
@@ -150,278 +542,44 @@
   },
   "components": {
     "schemas": {
-      "DimensionDto": {
+      "AddressDto": {
+        "type": "object",
+        "properties": {
+          "country": {
+            "type": "string",
+            "description": "Страна."
+          },
+          "city": {
+            "type": "string",
+            "description": "Город."
+          },
+          "street": {
+            "type": "string",
+            "description": "Улица."
+          },
+          "house": {
+            "type": "string",
+            "description": "Дом."
+          },
+          "flat": {
+            "type": "string",
+            "description": "Квартира."
+          }
+        },
+        "description": "Представление адреса в системе."
+      },
+      "CreateNewOrderRequest": {
         "required": [
-          "depth",
-          "height",
-          "width"
+          "deliveryAddress",
+          "shoppingCart"
         ],
         "type": "object",
         "properties": {
-          "width": {
-            "minimum": 1,
-            "type": "number",
-            "description": "Ширина",
-            "format": "double"
+          "shoppingCart": {
+            "$ref": "#/components/schemas/ShoppingCartDto"
           },
-          "height": {
-            "minimum": 1,
-            "type": "number",
-            "description": "Высота",
-            "format": "double",
-            "example": 1.0
-          },
-          "depth": {
-            "minimum": 1,
-            "type": "number",
-            "description": "Глубина",
-            "format": "double",
-            "example": 1.0
-          }
-        },
-        "description": "Размеры товара"
-      },
-      "NewProductInWarehouseRequest": {
-        "required": [
-          "dimension",
-          "productId",
-          "weight"
-        ],
-        "type": "object",
-        "properties": {
-          "productId": {
-            "type": "string",
-            "description": "Идентификатор товара в БД",
-            "format": "uuid",
-            "example": "53aa35c8-e659-44b2-882f-f6056e443c99"
-          },
-          "fragile": {
-            "type": "boolean",
-            "description": "Признак хрупкости",
-            "example": true
-          },
-          "dimension": {
-            "$ref": "#/components/schemas/DimensionDto"
-          },
-          "weight": {
-            "minimum": 1,
-            "type": "number",
-            "description": "Вес товара",
-            "format": "double",
-            "example": 1.0
-          }
-        },
-        "description": "Запрос на добавление нового товара на склад"
-      },
-      "SpecifiedProductAlreadyInWarehouseException": {
-        "type": "object",
-        "properties": {
-          "cause": {
-            "type": "object",
-            "properties": {
-              "stackTrace": {
-                "type": "array",
-                "items": {
-                  "type": "object",
-                  "properties": {
-                    "classLoaderName": {
-                      "type": "string"
-                    },
-                    "moduleName": {
-                      "type": "string"
-                    },
-                    "moduleVersion": {
-                      "type": "string"
-                    },
-                    "methodName": {
-                      "type": "string"
-                    },
-                    "fileName": {
-                      "type": "string"
-                    },
-                    "lineNumber": {
-                      "type": "integer",
-                      "format": "int32"
-                    },
-                    "className": {
-                      "type": "string"
-                    },
-                    "nativeMethod": {
-                      "type": "boolean"
-                    }
-                  }
-                }
-              },
-              "message": {
-                "type": "string"
-              },
-              "localizedMessage": {
-                "type": "string"
-              }
-            }
-          },
-          "stackTrace": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "classLoaderName": {
-                  "type": "string"
-                },
-                "moduleName": {
-                  "type": "string"
-                },
-                "moduleVersion": {
-                  "type": "string"
-                },
-                "methodName": {
-                  "type": "string"
-                },
-                "fileName": {
-                  "type": "string"
-                },
-                "lineNumber": {
-                  "type": "integer",
-                  "format": "int32"
-                },
-                "className": {
-                  "type": "string"
-                },
-                "nativeMethod": {
-                  "type": "boolean"
-                }
-              }
-            }
-          },
-          "httpStatus": {
-            "type": "string",
-            "enum": [
-              "100 CONTINUE",
-              "101 SWITCHING_PROTOCOLS",
-              "102 PROCESSING",
-              "103 EARLY_HINTS",
-              "103 CHECKPOINT",
-              "200 OK",
-              "201 CREATED",
-              "202 ACCEPTED",
-              "203 NON_AUTHORITATIVE_INFORMATION",
-              "204 NO_CONTENT",
-              "205 RESET_CONTENT",
-              "206 PARTIAL_CONTENT",
-              "207 MULTI_STATUS",
-              "208 ALREADY_REPORTED",
-              "226 IM_USED",
-              "300 MULTIPLE_CHOICES",
-              "301 MOVED_PERMANENTLY",
-              "302 FOUND",
-              "302 MOVED_TEMPORARILY",
-              "303 SEE_OTHER",
-              "304 NOT_MODIFIED",
-              "305 USE_PROXY",
-              "307 TEMPORARY_REDIRECT",
-              "308 PERMANENT_REDIRECT",
-              "400 BAD_REQUEST",
-              "401 UNAUTHORIZED",
-              "402 PAYMENT_REQUIRED",
-              "403 FORBIDDEN",
-              "404 NOT_FOUND",
-              "405 METHOD_NOT_ALLOWED",
-              "406 NOT_ACCEPTABLE",
-              "407 PROXY_AUTHENTICATION_REQUIRED",
-              "408 REQUEST_TIMEOUT",
-              "409 CONFLICT",
-              "410 GONE",
-              "411 LENGTH_REQUIRED",
-              "412 PRECONDITION_FAILED",
-              "413 PAYLOAD_TOO_LARGE",
-              "413 REQUEST_ENTITY_TOO_LARGE",
-              "414 URI_TOO_LONG",
-              "414 REQUEST_URI_TOO_LONG",
-              "415 UNSUPPORTED_MEDIA_TYPE",
-              "416 REQUESTED_RANGE_NOT_SATISFIABLE",
-              "417 EXPECTATION_FAILED",
-              "418 I_AM_A_TEAPOT",
-              "419 INSUFFICIENT_SPACE_ON_RESOURCE",
-              "420 METHOD_FAILURE",
-              "421 DESTINATION_LOCKED",
-              "422 UNPROCESSABLE_ENTITY",
-              "423 LOCKED",
-              "424 FAILED_DEPENDENCY",
-              "425 TOO_EARLY",
-              "426 UPGRADE_REQUIRED",
-              "428 PRECONDITION_REQUIRED",
-              "429 TOO_MANY_REQUESTS",
-              "431 REQUEST_HEADER_FIELDS_TOO_LARGE",
-              "451 UNAVAILABLE_FOR_LEGAL_REASONS",
-              "500 INTERNAL_SERVER_ERROR",
-              "501 NOT_IMPLEMENTED",
-              "502 BAD_GATEWAY",
-              "503 SERVICE_UNAVAILABLE",
-              "504 GATEWAY_TIMEOUT",
-              "505 HTTP_VERSION_NOT_SUPPORTED",
-              "506 VARIANT_ALSO_NEGOTIATES",
-              "507 INSUFFICIENT_STORAGE",
-              "508 LOOP_DETECTED",
-              "509 BANDWIDTH_LIMIT_EXCEEDED",
-              "510 NOT_EXTENDED",
-              "511 NETWORK_AUTHENTICATION_REQUIRED"
-            ]
-          },
-          "userMessage": {
-            "type": "string"
-          },
-          "message": {
-            "type": "string"
-          },
-          "suppressed": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "stackTrace": {
-                  "type": "array",
-                  "items": {
-                    "type": "object",
-                    "properties": {
-                      "classLoaderName": {
-                        "type": "string"
-                      },
-                      "moduleName": {
-                        "type": "string"
-                      },
-                      "moduleVersion": {
-                        "type": "string"
-                      },
-                      "methodName": {
-                        "type": "string"
-                      },
-                      "fileName": {
-                        "type": "string"
-                      },
-                      "lineNumber": {
-                        "type": "integer",
-                        "format": "int32"
-                      },
-                      "className": {
-                        "type": "string"
-                      },
-                      "nativeMethod": {
-                        "type": "boolean"
-                      }
-                    }
-                  }
-                },
-                "message": {
-                  "type": "string"
-                },
-                "localizedMessage": {
-                  "type": "string"
-                }
-              }
-            }
-          },
-          "localizedMessage": {
-            "type": "string"
+          "deliveryAddress": {
+            "$ref": "#/components/schemas/AddressDto"
           }
         }
       },
@@ -449,264 +607,6 @@
           }
         },
         "description": "Корзина товаров в онлайн магазине."
-      },
-      "BookedProductsDto": {
-        "required": [
-          "deliveryVolume",
-          "deliveryWeight",
-          "fragile"
-        ],
-        "type": "object",
-        "properties": {
-          "deliveryWeight": {
-            "type": "number",
-            "description": "Общий вес доставки",
-            "format": "double"
-          },
-          "deliveryVolume": {
-            "type": "number",
-            "description": "Общие объём доставки.",
-            "format": "double"
-          },
-          "fragile": {
-            "type": "boolean",
-            "description": "Есть ли хрупкие вещи в доставке."
-          }
-        },
-        "description": "Общие сведения о зарезервированных товарах по корзине."
-      },
-      "ProductInShoppingCartLowQuantityInWarehouse": {
-        "type": "object",
-        "properties": {
-          "cause": {
-            "type": "object",
-            "properties": {
-              "stackTrace": {
-                "type": "array",
-                "items": {
-                  "type": "object",
-                  "properties": {
-                    "classLoaderName": {
-                      "type": "string"
-                    },
-                    "moduleName": {
-                      "type": "string"
-                    },
-                    "moduleVersion": {
-                      "type": "string"
-                    },
-                    "methodName": {
-                      "type": "string"
-                    },
-                    "fileName": {
-                      "type": "string"
-                    },
-                    "lineNumber": {
-                      "type": "integer",
-                      "format": "int32"
-                    },
-                    "className": {
-                      "type": "string"
-                    },
-                    "nativeMethod": {
-                      "type": "boolean"
-                    }
-                  }
-                }
-              },
-              "message": {
-                "type": "string"
-              },
-              "localizedMessage": {
-                "type": "string"
-              }
-            }
-          },
-          "stackTrace": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "classLoaderName": {
-                  "type": "string"
-                },
-                "moduleName": {
-                  "type": "string"
-                },
-                "moduleVersion": {
-                  "type": "string"
-                },
-                "methodName": {
-                  "type": "string"
-                },
-                "fileName": {
-                  "type": "string"
-                },
-                "lineNumber": {
-                  "type": "integer",
-                  "format": "int32"
-                },
-                "className": {
-                  "type": "string"
-                },
-                "nativeMethod": {
-                  "type": "boolean"
-                }
-              }
-            }
-          },
-          "httpStatus": {
-            "type": "string",
-            "enum": [
-              "100 CONTINUE",
-              "101 SWITCHING_PROTOCOLS",
-              "102 PROCESSING",
-              "103 EARLY_HINTS",
-              "103 CHECKPOINT",
-              "200 OK",
-              "201 CREATED",
-              "202 ACCEPTED",
-              "203 NON_AUTHORITATIVE_INFORMATION",
-              "204 NO_CONTENT",
-              "205 RESET_CONTENT",
-              "206 PARTIAL_CONTENT",
-              "207 MULTI_STATUS",
-              "208 ALREADY_REPORTED",
-              "226 IM_USED",
-              "300 MULTIPLE_CHOICES",
-              "301 MOVED_PERMANENTLY",
-              "302 FOUND",
-              "302 MOVED_TEMPORARILY",
-              "303 SEE_OTHER",
-              "304 NOT_MODIFIED",
-              "305 USE_PROXY",
-              "307 TEMPORARY_REDIRECT",
-              "308 PERMANENT_REDIRECT",
-              "400 BAD_REQUEST",
-              "401 UNAUTHORIZED",
-              "402 PAYMENT_REQUIRED",
-              "403 FORBIDDEN",
-              "404 NOT_FOUND",
-              "405 METHOD_NOT_ALLOWED",
-              "406 NOT_ACCEPTABLE",
-              "407 PROXY_AUTHENTICATION_REQUIRED",
-              "408 REQUEST_TIMEOUT",
-              "409 CONFLICT",
-              "410 GONE",
-              "411 LENGTH_REQUIRED",
-              "412 PRECONDITION_FAILED",
-              "413 PAYLOAD_TOO_LARGE",
-              "413 REQUEST_ENTITY_TOO_LARGE",
-              "414 URI_TOO_LONG",
-              "414 REQUEST_URI_TOO_LONG",
-              "415 UNSUPPORTED_MEDIA_TYPE",
-              "416 REQUESTED_RANGE_NOT_SATISFIABLE",
-              "417 EXPECTATION_FAILED",
-              "418 I_AM_A_TEAPOT",
-              "419 INSUFFICIENT_SPACE_ON_RESOURCE",
-              "420 METHOD_FAILURE",
-              "421 DESTINATION_LOCKED",
-              "422 UNPROCESSABLE_ENTITY",
-              "423 LOCKED",
-              "424 FAILED_DEPENDENCY",
-              "425 TOO_EARLY",
-              "426 UPGRADE_REQUIRED",
-              "428 PRECONDITION_REQUIRED",
-              "429 TOO_MANY_REQUESTS",
-              "431 REQUEST_HEADER_FIELDS_TOO_LARGE",
-              "451 UNAVAILABLE_FOR_LEGAL_REASONS",
-              "500 INTERNAL_SERVER_ERROR",
-              "501 NOT_IMPLEMENTED",
-              "502 BAD_GATEWAY",
-              "503 SERVICE_UNAVAILABLE",
-              "504 GATEWAY_TIMEOUT",
-              "505 HTTP_VERSION_NOT_SUPPORTED",
-              "506 VARIANT_ALSO_NEGOTIATES",
-              "507 INSUFFICIENT_STORAGE",
-              "508 LOOP_DETECTED",
-              "509 BANDWIDTH_LIMIT_EXCEEDED",
-              "510 NOT_EXTENDED",
-              "511 NETWORK_AUTHENTICATION_REQUIRED"
-            ]
-          },
-          "userMessage": {
-            "type": "string"
-          },
-          "message": {
-            "type": "string"
-          },
-          "suppressed": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "stackTrace": {
-                  "type": "array",
-                  "items": {
-                    "type": "object",
-                    "properties": {
-                      "classLoaderName": {
-                        "type": "string"
-                      },
-                      "moduleName": {
-                        "type": "string"
-                      },
-                      "moduleVersion": {
-                        "type": "string"
-                      },
-                      "methodName": {
-                        "type": "string"
-                      },
-                      "fileName": {
-                        "type": "string"
-                      },
-                      "lineNumber": {
-                        "type": "integer",
-                        "format": "int32"
-                      },
-                      "className": {
-                        "type": "string"
-                      },
-                      "nativeMethod": {
-                        "type": "boolean"
-                      }
-                    }
-                  }
-                },
-                "message": {
-                  "type": "string"
-                },
-                "localizedMessage": {
-                  "type": "string"
-                }
-              }
-            }
-          },
-          "localizedMessage": {
-            "type": "string"
-          }
-        }
-      },
-      "AddProductToWarehouseRequest": {
-        "required": [
-          "quantity"
-        ],
-        "type": "object",
-        "properties": {
-          "productId": {
-            "type": "string",
-            "description": "Идентификатор товара в БД",
-            "format": "uuid",
-            "example": "53aa35c8-e659-44b2-882f-f6056e443c99"
-          },
-          "quantity": {
-            "minimum": 1,
-            "type": "integer",
-            "description": "Количество единиц товара для добавления на склад",
-            "format": "int64"
-          }
-        },
-        "description": "Запрос на увеличение единиц товара по его идентификатору"
       },
       "NoSpecifiedProductInWarehouseException": {
         "type": "object",
@@ -920,31 +820,533 @@
           }
         }
       },
-      "AddressDto": {
+      "OrderDto": {
+        "required": [
+          "orderId",
+          "products"
+        ],
         "type": "object",
         "properties": {
-          "country": {
+          "orderId": {
             "type": "string",
-            "description": "Страна."
+            "description": "Идентификатор заказа.",
+            "format": "uuid"
           },
-          "city": {
+          "shoppingCartId": {
             "type": "string",
-            "description": "Город."
+            "description": "Идентификатор корзины.",
+            "format": "uuid",
+            "nullable": true
           },
-          "street": {
-            "type": "string",
-            "description": "Улица."
+          "products": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "integer",
+              "description": "Отображение идентификатора товара на отобранное количество.",
+              "format": "int64"
+            },
+            "description": "Отображение идентификатора товара на отобранное количество."
           },
-          "house": {
+          "paymentId": {
             "type": "string",
-            "description": "Дом."
+            "description": "Идентификатор оплаты.",
+            "format": "uuid"
           },
-          "flat": {
+          "deliveryId": {
             "type": "string",
-            "description": "Квартира."
+            "description": "Идентификатор доставки.",
+            "format": "uuid"
+          },
+          "state": {
+            "type": "string",
+            "description": "Статус заказа.",
+            "enum": [
+              "NEW",
+              "ON_PAYMENT",
+              "ON_DELIVERY",
+              "DONE",
+              "DELIVERED",
+              "ASSEMBLED",
+              "PAID",
+              "COMPLETED",
+              "DELIVERY_FAILED",
+              "ASSEMBLY_FAILED",
+              "PAYMENT_FAILED",
+              "PRODUCT_RETURNED",
+              "CANCELED"
+            ]
+          },
+          "deliveryWeight": {
+            "type": "number",
+            "description": "Общий вес доставки.",
+            "format": "double"
+          },
+          "deliveryVolume": {
+            "type": "number",
+            "description": "Общий объём доставки.",
+            "format": "double"
+          },
+          "fragile": {
+            "type": "boolean",
+            "description": "Признак хрупкости заказа."
+          },
+          "totalPrice": {
+            "type": "number",
+            "description": "Общая стоимость."
+          },
+          "deliveryPrice": {
+            "type": "number",
+            "description": "Стоимость доставки."
+          },
+          "productPrice": {
+            "type": "number",
+            "description": "Стоимость товаров в заказе."
           }
         },
-        "description": "Представление адреса в системе."
+        "description": "Представление заказа в системе."
+      },
+      "ProductReturnRequest": {
+        "required": [
+          "products"
+        ],
+        "type": "object",
+        "properties": {
+          "orderId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "products": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        }
+      },
+      "NoOrderFoundException": {
+        "type": "object",
+        "properties": {
+          "cause": {
+            "type": "object",
+            "properties": {
+              "stackTrace": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "classLoaderName": {
+                      "type": "string"
+                    },
+                    "moduleName": {
+                      "type": "string"
+                    },
+                    "moduleVersion": {
+                      "type": "string"
+                    },
+                    "methodName": {
+                      "type": "string"
+                    },
+                    "fileName": {
+                      "type": "string"
+                    },
+                    "lineNumber": {
+                      "type": "integer",
+                      "format": "int32"
+                    },
+                    "className": {
+                      "type": "string"
+                    },
+                    "nativeMethod": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              },
+              "message": {
+                "type": "string"
+              },
+              "localizedMessage": {
+                "type": "string"
+              }
+            }
+          },
+          "stackTrace": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "classLoaderName": {
+                  "type": "string"
+                },
+                "moduleName": {
+                  "type": "string"
+                },
+                "moduleVersion": {
+                  "type": "string"
+                },
+                "methodName": {
+                  "type": "string"
+                },
+                "fileName": {
+                  "type": "string"
+                },
+                "lineNumber": {
+                  "type": "integer",
+                  "format": "int32"
+                },
+                "className": {
+                  "type": "string"
+                },
+                "nativeMethod": {
+                  "type": "boolean"
+                }
+              }
+            }
+          },
+          "httpStatus": {
+            "type": "string",
+            "enum": [
+              "100 CONTINUE",
+              "101 SWITCHING_PROTOCOLS",
+              "102 PROCESSING",
+              "103 EARLY_HINTS",
+              "103 CHECKPOINT",
+              "200 OK",
+              "201 CREATED",
+              "202 ACCEPTED",
+              "203 NON_AUTHORITATIVE_INFORMATION",
+              "204 NO_CONTENT",
+              "205 RESET_CONTENT",
+              "206 PARTIAL_CONTENT",
+              "207 MULTI_STATUS",
+              "208 ALREADY_REPORTED",
+              "226 IM_USED",
+              "300 MULTIPLE_CHOICES",
+              "301 MOVED_PERMANENTLY",
+              "302 FOUND",
+              "302 MOVED_TEMPORARILY",
+              "303 SEE_OTHER",
+              "304 NOT_MODIFIED",
+              "305 USE_PROXY",
+              "307 TEMPORARY_REDIRECT",
+              "308 PERMANENT_REDIRECT",
+              "400 BAD_REQUEST",
+              "401 UNAUTHORIZED",
+              "402 PAYMENT_REQUIRED",
+              "403 FORBIDDEN",
+              "404 NOT_FOUND",
+              "405 METHOD_NOT_ALLOWED",
+              "406 NOT_ACCEPTABLE",
+              "407 PROXY_AUTHENTICATION_REQUIRED",
+              "408 REQUEST_TIMEOUT",
+              "409 CONFLICT",
+              "410 GONE",
+              "411 LENGTH_REQUIRED",
+              "412 PRECONDITION_FAILED",
+              "413 PAYLOAD_TOO_LARGE",
+              "413 REQUEST_ENTITY_TOO_LARGE",
+              "414 URI_TOO_LONG",
+              "414 REQUEST_URI_TOO_LONG",
+              "415 UNSUPPORTED_MEDIA_TYPE",
+              "416 REQUESTED_RANGE_NOT_SATISFIABLE",
+              "417 EXPECTATION_FAILED",
+              "418 I_AM_A_TEAPOT",
+              "419 INSUFFICIENT_SPACE_ON_RESOURCE",
+              "420 METHOD_FAILURE",
+              "421 DESTINATION_LOCKED",
+              "422 UNPROCESSABLE_ENTITY",
+              "423 LOCKED",
+              "424 FAILED_DEPENDENCY",
+              "425 TOO_EARLY",
+              "426 UPGRADE_REQUIRED",
+              "428 PRECONDITION_REQUIRED",
+              "429 TOO_MANY_REQUESTS",
+              "431 REQUEST_HEADER_FIELDS_TOO_LARGE",
+              "451 UNAVAILABLE_FOR_LEGAL_REASONS",
+              "500 INTERNAL_SERVER_ERROR",
+              "501 NOT_IMPLEMENTED",
+              "502 BAD_GATEWAY",
+              "503 SERVICE_UNAVAILABLE",
+              "504 GATEWAY_TIMEOUT",
+              "505 HTTP_VERSION_NOT_SUPPORTED",
+              "506 VARIANT_ALSO_NEGOTIATES",
+              "507 INSUFFICIENT_STORAGE",
+              "508 LOOP_DETECTED",
+              "509 BANDWIDTH_LIMIT_EXCEEDED",
+              "510 NOT_EXTENDED",
+              "511 NETWORK_AUTHENTICATION_REQUIRED"
+            ]
+          },
+          "userMessage": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "suppressed": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "stackTrace": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "classLoaderName": {
+                        "type": "string"
+                      },
+                      "moduleName": {
+                        "type": "string"
+                      },
+                      "moduleVersion": {
+                        "type": "string"
+                      },
+                      "methodName": {
+                        "type": "string"
+                      },
+                      "fileName": {
+                        "type": "string"
+                      },
+                      "lineNumber": {
+                        "type": "integer",
+                        "format": "int32"
+                      },
+                      "className": {
+                        "type": "string"
+                      },
+                      "nativeMethod": {
+                        "type": "boolean"
+                      }
+                    }
+                  }
+                },
+                "message": {
+                  "type": "string"
+                },
+                "localizedMessage": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "localizedMessage": {
+            "type": "string"
+          }
+        }
+      },
+      "NotAuthorizedUserException": {
+        "type": "object",
+        "properties": {
+          "cause": {
+            "type": "object",
+            "properties": {
+              "stackTrace": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "classLoaderName": {
+                      "type": "string"
+                    },
+                    "moduleName": {
+                      "type": "string"
+                    },
+                    "moduleVersion": {
+                      "type": "string"
+                    },
+                    "methodName": {
+                      "type": "string"
+                    },
+                    "fileName": {
+                      "type": "string"
+                    },
+                    "lineNumber": {
+                      "type": "integer",
+                      "format": "int32"
+                    },
+                    "className": {
+                      "type": "string"
+                    },
+                    "nativeMethod": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              },
+              "message": {
+                "type": "string"
+              },
+              "localizedMessage": {
+                "type": "string"
+              }
+            }
+          },
+          "stackTrace": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "classLoaderName": {
+                  "type": "string"
+                },
+                "moduleName": {
+                  "type": "string"
+                },
+                "moduleVersion": {
+                  "type": "string"
+                },
+                "methodName": {
+                  "type": "string"
+                },
+                "fileName": {
+                  "type": "string"
+                },
+                "lineNumber": {
+                  "type": "integer",
+                  "format": "int32"
+                },
+                "className": {
+                  "type": "string"
+                },
+                "nativeMethod": {
+                  "type": "boolean"
+                }
+              }
+            }
+          },
+          "httpStatus": {
+            "type": "string",
+            "enum": [
+              "100 CONTINUE",
+              "101 SWITCHING_PROTOCOLS",
+              "102 PROCESSING",
+              "103 EARLY_HINTS",
+              "103 CHECKPOINT",
+              "200 OK",
+              "201 CREATED",
+              "202 ACCEPTED",
+              "203 NON_AUTHORITATIVE_INFORMATION",
+              "204 NO_CONTENT",
+              "205 RESET_CONTENT",
+              "206 PARTIAL_CONTENT",
+              "207 MULTI_STATUS",
+              "208 ALREADY_REPORTED",
+              "226 IM_USED",
+              "300 MULTIPLE_CHOICES",
+              "301 MOVED_PERMANENTLY",
+              "302 FOUND",
+              "302 MOVED_TEMPORARILY",
+              "303 SEE_OTHER",
+              "304 NOT_MODIFIED",
+              "305 USE_PROXY",
+              "307 TEMPORARY_REDIRECT",
+              "308 PERMANENT_REDIRECT",
+              "400 BAD_REQUEST",
+              "401 UNAUTHORIZED",
+              "402 PAYMENT_REQUIRED",
+              "403 FORBIDDEN",
+              "404 NOT_FOUND",
+              "405 METHOD_NOT_ALLOWED",
+              "406 NOT_ACCEPTABLE",
+              "407 PROXY_AUTHENTICATION_REQUIRED",
+              "408 REQUEST_TIMEOUT",
+              "409 CONFLICT",
+              "410 GONE",
+              "411 LENGTH_REQUIRED",
+              "412 PRECONDITION_FAILED",
+              "413 PAYLOAD_TOO_LARGE",
+              "413 REQUEST_ENTITY_TOO_LARGE",
+              "414 URI_TOO_LONG",
+              "414 REQUEST_URI_TOO_LONG",
+              "415 UNSUPPORTED_MEDIA_TYPE",
+              "416 REQUESTED_RANGE_NOT_SATISFIABLE",
+              "417 EXPECTATION_FAILED",
+              "418 I_AM_A_TEAPOT",
+              "419 INSUFFICIENT_SPACE_ON_RESOURCE",
+              "420 METHOD_FAILURE",
+              "421 DESTINATION_LOCKED",
+              "422 UNPROCESSABLE_ENTITY",
+              "423 LOCKED",
+              "424 FAILED_DEPENDENCY",
+              "425 TOO_EARLY",
+              "426 UPGRADE_REQUIRED",
+              "428 PRECONDITION_REQUIRED",
+              "429 TOO_MANY_REQUESTS",
+              "431 REQUEST_HEADER_FIELDS_TOO_LARGE",
+              "451 UNAVAILABLE_FOR_LEGAL_REASONS",
+              "500 INTERNAL_SERVER_ERROR",
+              "501 NOT_IMPLEMENTED",
+              "502 BAD_GATEWAY",
+              "503 SERVICE_UNAVAILABLE",
+              "504 GATEWAY_TIMEOUT",
+              "505 HTTP_VERSION_NOT_SUPPORTED",
+              "506 VARIANT_ALSO_NEGOTIATES",
+              "507 INSUFFICIENT_STORAGE",
+              "508 LOOP_DETECTED",
+              "509 BANDWIDTH_LIMIT_EXCEEDED",
+              "510 NOT_EXTENDED",
+              "511 NETWORK_AUTHENTICATION_REQUIRED"
+            ]
+          },
+          "userMessage": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "suppressed": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "stackTrace": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "classLoaderName": {
+                        "type": "string"
+                      },
+                      "moduleName": {
+                        "type": "string"
+                      },
+                      "moduleVersion": {
+                        "type": "string"
+                      },
+                      "methodName": {
+                        "type": "string"
+                      },
+                      "fileName": {
+                        "type": "string"
+                      },
+                      "lineNumber": {
+                        "type": "integer",
+                        "format": "int32"
+                      },
+                      "className": {
+                        "type": "string"
+                      },
+                      "nativeMethod": {
+                        "type": "boolean"
+                      }
+                    }
+                  }
+                },
+                "message": {
+                  "type": "string"
+                },
+                "localizedMessage": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "localizedMessage": {
+            "type": "string"
+          }
+        }
       }
     }
   }
