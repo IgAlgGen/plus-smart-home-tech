@@ -58,4 +58,10 @@ public class ShoppingCartController implements ShoppingCartOperations {
         log.info("Возвращаем корзину: {}", response);
         return response;
     }
+
+    @Override
+    public String getUsernameById(UUID cartId) {
+        log.info("GET /api/v1/shopping-cart/username - Получить имя пользователя по id корзины {}", cartId);
+        return shoppingCartService.getUsernameById(cartId);
+    }
 }
