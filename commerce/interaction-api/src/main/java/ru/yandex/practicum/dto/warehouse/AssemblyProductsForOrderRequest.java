@@ -1,18 +1,17 @@
 package ru.yandex.practicum.dto.warehouse;
 
-import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
+import java.util.Map;
 import java.util.UUID;
 
 @Data
 @AllArgsConstructor
-public class AddProductToWarehouseRequest {
+public class AssemblyProductsForOrderRequest {
     @NotNull
-    private UUID productId;
+    private Map<UUID, Integer> products;
     @NotNull
-    @Min(1)
-    private Integer quantity;
+    private UUID orderId;
 }
